@@ -1,0 +1,24 @@
+{
+  "name": "Write",
+  "short_name": "Write",
+  "description": "A minimal, distraction-free notepad. Your words stay on your device.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#faf8f3",
+  "theme_color": "#faf8f3",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "W/1.png",
+      "sizes": "500x500",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "W/2.png",
+      "sizes": "500x500",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

@@ -1,0 +1,1144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self'; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none';">
+  <meta name="referrer" content="no-referrer">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png">
+  <link rel="apple-touch-icon" href="W/1.png">
+  <meta name="theme-color" content="#faf8f3" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#171714" media="(prefers-color-scheme: dark)">
+  <title>Write</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #faf8f3;
+      --text: #1a1a1a;
+      --text-muted: #8a8880;
+      --accent: #f0ede6;
+      --border: #e5e2da;
+      --green: #22c55e;
+    }
+
+    [data-theme="dark"] {
+      --bg: #171714;
+      --text: #e8e8e4;
+      --text-muted: #6a6a66;
+      --accent: #1f1f1c;
+      --border: #2a2a26;
+      --green: #4ade80;
+    }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+    }
+
+    html {
+      font-size: 18px;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.8;
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+
+    [data-font="serif"] { --font-body: Georgia, "Times New Roman", serif; }
+    [data-font="mono"] { --font-body: "American Typewriter", "Courier New", Courier, monospace; }
+
+    #editor {
+      font-family: var(--font-body);
+      max-width: 680px;
+      height: 100%;
+      margin: 0 auto;
+      padding: 12vh 24px 40vh 24px;
+      outline: none;
+      overflow-y: auto;
+    }
+
+    [data-font="mono"] #editor { font-size: 0.9rem; line-height: 1.7; }
+
+    #editor:empty::before {
+      content: "Begin writing...";
+      color: var(--text-muted);
+      font-style: italic;
+      pointer-events: none;
+    }
+
+    #editor div, #editor p { margin-bottom: 0.5em; min-height: 1.8em; }
+
+    #editor h1 { font-size: 2.2rem; font-weight: 400; margin: 1em 0 0.5em 0; line-height: 1.3; letter-spacing: -0.02em; }
+    #editor h2 { font-size: 1.6rem; font-weight: 400; margin: 0.9em 0 0.4em 0; line-height: 1.35; }
+    #editor h3 { font-size: 1.25rem; font-weight: 600; margin: 0.8em 0 0.3em 0; line-height: 1.4; }
+
+    [data-font="mono"] #editor h1 { font-size: 1.8rem; font-weight: 700; }
+    [data-font="mono"] #editor h2 { font-size: 1.4rem; font-weight: 600; }
+    [data-font="mono"] #editor h3 { font-size: 1.1rem; font-weight: 600; }
+
+    #editor h1:first-child, #editor h2:first-child, #editor h3:first-child { margin-top: 0; }
+
+    #editor ul, #editor ol { margin: 0.5em 0; padding-left: 1.5em; }
+    #editor li { margin: 0.2em 0; }
+    #editor li ul, #editor li ol { margin: 0.2em 0; }
+
+    #editor hr { border: none; border-top: 1px solid var(--border); margin: 2em 0; }
+    #editor strong, #editor b { font-weight: 700; }
+    #editor em, #editor i { font-style: italic; }
+
+    #editor code {
+      font-family: "SF Mono", Monaco, Consolas, monospace;
+      font-size: 0.9em;
+      background: var(--accent);
+      padding: 0.15em 0.4em;
+      border-radius: 3px;
+    }
+
+    #editor pre {
+      font-family: "SF Mono", Monaco, Consolas, monospace;
+      font-size: 0.85rem;
+      background: var(--accent);
+      padding: 1em;
+      border-radius: 4px;
+      overflow-x: auto;
+      margin: 1em 0;
+      white-space: pre-wrap;
+    }
+
+    #editor blockquote {
+      border-left: 3px solid var(--text-muted);
+      padding-left: 1em;
+      margin: 1em 0;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    #editor a { color: var(--text); text-decoration: underline; text-underline-offset: 2px; }
+
+    /* Creation date stamp - top right */
+    #date-stamp {
+      position: fixed;
+      top: 20px;
+      right: 24px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      font-size: 11px;
+      color: var(--text-muted);
+      opacity: 0.6;
+      pointer-events: none;
+      user-select: none;
+      z-index: 50;
+    }
+
+    /* Green save dot - bottom right */
+    #save-dot {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      width: 6px;
+      height: 6px;
+      background: var(--green);
+      border-radius: 50%;
+      opacity: 0.2;
+      transition: opacity 0.5s ease;
+      z-index: 100;
+    }
+
+    #save-dot.visible {
+      opacity: 0.8;
+    }
+
+    /* Menu trigger - bottom left */
+    #menu-trigger {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      width: 36px;
+      height: 36px;
+      background: var(--accent);
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 18px;
+      color: var(--text-muted);
+      transition: all 0.2s ease;
+      z-index: 200;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    #menu-trigger:hover {
+      background: var(--border);
+      color: var(--text);
+    }
+
+    /* Dropdown menu */
+    #menu {
+      position: fixed;
+      bottom: 64px;
+      left: 20px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      min-width: 200px;
+      padding: 6px;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(8px) scale(0.96);
+      transition: all 0.15s ease;
+      z-index: 300;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      font-size: 13px;
+    }
+
+    #menu.visible {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0) scale(1);
+    }
+
+    .menu-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      color: var(--text);
+      transition: background 0.1s ease;
+    }
+
+    .menu-item:hover { background: var(--accent); }
+
+    .menu-item .icon {
+      width: 18px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    .menu-item .label { flex: 1; }
+
+    .menu-item .meta {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .menu-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 6px 0;
+    }
+
+    .menu-section-title {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      padding: 8px 12px 4px;
+    }
+
+    /* Documents list */
+    #docs-list {
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .doc-item {
+      display: flex;
+      align-items: center;
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.1s ease;
+    }
+
+    .doc-item:hover { background: var(--accent); }
+    .doc-item.active { background: var(--accent); }
+
+    .doc-item .doc-title {
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-size: 13px;
+    }
+
+    .doc-item .doc-date {
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-left: 8px;
+    }
+
+    .doc-item .doc-delete {
+      opacity: 0;
+      margin-left: 8px;
+      color: var(--text-muted);
+      font-size: 12px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      transition: all 0.1s ease;
+    }
+
+    .doc-item:hover .doc-delete { opacity: 1; }
+    .doc-item .doc-delete:hover { background: var(--border); color: var(--text); }
+
+    /* Help modal */
+    #help-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.2s ease;
+      z-index: 1000;
+    }
+
+    #help-overlay.visible { opacity: 1; visibility: visible; }
+
+    #help-modal {
+      background: var(--bg);
+      max-width: 420px;
+      width: 90%;
+      max-height: 85vh;
+      overflow-y: auto;
+      padding: 24px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 13px;
+    }
+
+    #help-modal h2 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+    #help-modal .subtitle { color: var(--text-muted); margin-bottom: 20px; font-size: 12px; }
+    #help-modal h3 { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin: 20px 0 10px 0; }
+    #help-modal h3:first-of-type { margin-top: 0; }
+    #help-modal table { width: 100%; border-collapse: collapse; }
+    #help-modal td { padding: 5px 0; font-size: 12px; }
+    #help-modal td:first-child { color: var(--text-muted); width: 40%; font-family: "SF Mono", Monaco, monospace; font-size: 11px; }
+    #help-modal kbd { font-family: "SF Mono", Monaco, monospace; font-size: 10px; background: var(--accent); border: 1px solid var(--border); padding: 2px 5px; border-radius: 4px; }
+    #help-modal .close-hint { margin-top: 20px; text-align: center; color: var(--text-muted); font-size: 11px; }
+    #help-modal a.btn:hover { background: var(--border); }
+
+    /* Drop overlay */
+    #drop-overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.2s ease;
+      z-index: 500;
+    }
+
+    #drop-overlay.visible { opacity: 0.97; visibility: visible; }
+    #drop-overlay span { font-size: 14px; color: var(--text-muted); letter-spacing: 0.1em; text-transform: uppercase; font-family: -apple-system, sans-serif; }
+
+    ::selection { background: var(--text); color: var(--bg); }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    @media print {
+      #editor { padding: 0; max-width: none; height: auto; overflow: visible; }
+      #save-dot, #menu-trigger, #menu, #drop-overlay, #help-overlay, #date-stamp { display: none !important; }
+    }
+
+    @media (max-width: 600px) {
+      html { font-size: 16px; }
+      #editor { padding: 6vh 20px 40vh 20px; }
+      #menu-trigger { bottom: 16px; left: 16px; }
+      #menu { bottom: 60px; left: 16px; }
+      #save-dot { bottom: 16px; right: 16px; }
+      #date-stamp { top: 12px; right: 16px; font-size: 10px; }
+    }
+  </style>
+</head>
+<body data-font="serif">
+  <div id="editor" contenteditable="true" spellcheck="true" data-gramm="false"></div>
+
+  <div id="date-stamp"></div>
+  <div id="save-dot"></div>
+  
+  <div id="menu-trigger">⋮</div>
+  
+  <div id="menu">
+    <div class="menu-item" id="new-doc">
+      <span class="icon">+</span>
+      <span class="label">New document</span>
+    </div>
+    <div class="menu-divider"></div>
+    <div class="menu-section-title">Documents</div>
+    <div id="docs-list"></div>
+    <div class="menu-divider"></div>
+    <div class="menu-item" id="toggle-theme">
+      <span class="icon" id="theme-icon">☀</span>
+      <span class="label">Toggle theme</span>
+      <span class="meta" id="theme-label">Light</span>
+    </div>
+    <div class="menu-item" id="toggle-font">
+      <span class="icon">Aa</span>
+      <span class="label">Toggle font</span>
+      <span class="meta" id="font-label">Serif</span>
+    </div>
+    <div class="menu-item" id="download-md">
+      <span class="icon">↓</span>
+      <span class="label">Download .md</span>
+      <span class="meta">⌘S</span>
+    </div>
+    <div class="menu-divider"></div>
+    <div class="menu-item" id="show-help">
+      <span class="icon">?</span>
+      <span class="label">Help & Shortcuts</span>
+    </div>
+  </div>
+
+  <div id="help-overlay">
+    <div id="help-modal">
+      <h2>A minimal space to write.</h2>
+      <p class="subtitle">Your words stay on your device. Nothing leaves this tab. No accounts, no cloud, no tracking.</p>
+
+      <div style="display:flex;gap:10px;margin:16px 0;">
+        <a class="btn" href="https://github.com/yourusername/write" target="_blank" rel="noopener" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);text-decoration:none;font-size:12px;font-weight:500;transition:background 0.15s ease;">
+          <span style="font-size:14px;">↓</span> Run locally
+        </a>
+        <a class="btn" href="https://github.com/yourusername/write" target="_blank" rel="noopener" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);text-decoration:none;font-size:12px;font-weight:500;transition:background 0.15s ease;">
+          <span style="font-size:14px;">★</span> Star on GitHub
+        </a>
+      </div>
+      
+      <h3>Formatting (type then space)</h3>
+      <table>
+        <tr><td>#</td><td>Heading 1</td></tr>
+        <tr><td>##</td><td>Heading 2</td></tr>
+        <tr><td>###</td><td>Heading 3</td></tr>
+        <tr><td>-</td><td>Bullet list</td></tr>
+        <tr><td>1.</td><td>Numbered list</td></tr>
+        <tr><td>></td><td>Blockquote</td></tr>
+        <tr><td>---</td><td>Horizontal divider</td></tr>
+        <tr><td>**text**</td><td><strong>Bold</strong></td></tr>
+        <tr><td>*text*</td><td><em>Italic</em></td></tr>
+        <tr><td>`text`</td><td><code style="background:var(--accent);padding:1px 4px;border-radius:3px;font-size:11px;">Code</code></td></tr>
+      </table>
+      
+      <h3>Keyboard Shortcuts</h3>
+      <table>
+        <tr><td><kbd>⌘</kbd><kbd>S</kbd></td><td>Save / Download as .md file</td></tr>
+        <tr><td><kbd>⌘</kbd><kbd>D</kbd></td><td>Toggle dark / light theme</td></tr>
+        <tr><td><kbd>⌘</kbd><kbd>B</kbd></td><td>Bold selected text</td></tr>
+        <tr><td><kbd>⌘</kbd><kbd>I</kbd></td><td>Italicize selected text</td></tr>
+        <tr><td><kbd>Tab</kbd></td><td>Indent list item</td></tr>
+        <tr><td><kbd>⇧</kbd><kbd>Tab</kbd></td><td>Outdent list item</td></tr>
+        <tr><td><kbd>Enter</kbd></td><td>New list item (or exit list if empty)</td></tr>
+        <tr><td><kbd>Esc</kbd></td><td>Close menu / modal</td></tr>
+      </table>
+      
+      <h3>Files</h3>
+      <table>
+        <tr><td>Drag & drop</td><td>Open .md or .txt file</td></tr>
+        <tr><td><kbd>⌘</kbd><kbd>S</kbd></td><td>Download current doc as .md</td></tr>
+      </table>
+      
+      <h3>Documents</h3>
+      <table>
+        <tr><td>Auto-save</td><td>Saves locally as you type</td></tr>
+        <tr><td>Green dot</td><td>Pulses when saved</td></tr>
+        <tr><td>Multiple docs</td><td>Create & switch via menu</td></tr>
+      </table>
+      
+      <p class="close-hint">Press <kbd>Esc</kbd> or click outside to close</p>
+    </div>
+  </div>
+
+  <div id="drop-overlay"><span>Drop to open</span></div>
+
+  <script>
+    (() => {
+      'use strict';
+
+      const DOCS_KEY = 'notepad_docs';
+      const CURRENT_KEY = 'notepad_current';
+      const THEME_KEY = 'notepad_theme';
+      const FONT_KEY = 'notepad_font';
+      const FS_KEY = 'notepad_fs';
+      const SAVE_DELAY = 500;
+
+      const $ = id => document.getElementById(id);
+      const editor = $('editor');
+      const saveDot = $('save-dot');
+      const menuTrigger = $('menu-trigger');
+      const menu = $('menu');
+      const docsList = $('docs-list');
+      const helpOverlay = $('help-overlay');
+      const dropOverlay = $('drop-overlay');
+      const themeIcon = $('theme-icon');
+      const themeLabel = $('theme-label');
+      const fontLabel = $('font-label');
+      const dateStamp = $('date-stamp');
+
+      let saveTimeout = null;
+      let docs = [];
+      let currentDocId = null;
+      let hasTriggeredFullscreen = false;
+
+      // === FULLSCREEN (on first keypress) ===
+      function tryEnterFullscreen() {
+        if (hasTriggeredFullscreen) return;
+        
+        let alreadyShown;
+        try { alreadyShown = localStorage.getItem(FS_KEY); } catch (e) {}
+        if (alreadyShown) {
+          hasTriggeredFullscreen = true;
+          return;
+        }
+
+        hasTriggeredFullscreen = true;
+        try { localStorage.setItem(FS_KEY, '1'); } catch (e) {}
+        
+        const el = document.documentElement;
+        if (el.requestFullscreen) el.requestFullscreen().catch(() => {});
+        else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+        else if (el.msRequestFullscreen) el.msRequestFullscreen();
+      }
+
+      // === DOCS MANAGEMENT ===
+      function loadDocs() {
+        try {
+          docs = JSON.parse(localStorage.getItem(DOCS_KEY)) || [];
+          currentDocId = localStorage.getItem(CURRENT_KEY);
+        } catch (e) {
+          docs = [];
+          currentDocId = null;
+        }
+        
+        if (docs.length === 0) {
+          createNewDoc(true);
+        } else if (!currentDocId || !docs.find(d => d.id === currentDocId)) {
+          currentDocId = docs[0].id;
+        }
+        
+        loadCurrentDoc();
+        renderDocsList();
+      }
+
+      function saveDocs() {
+        try {
+          localStorage.setItem(DOCS_KEY, JSON.stringify(docs));
+          localStorage.setItem(CURRENT_KEY, currentDocId);
+        } catch (e) {}
+      }
+
+      function createNewDoc(silent = false) {
+        const doc = {
+          id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+          title: 'Untitled',
+          content: '<h1></h1>',
+          created: Date.now(),
+          modified: Date.now()
+        };
+        docs.unshift(doc);
+        currentDocId = doc.id;
+        saveDocs();
+        // Create h1 element safely
+        editor.textContent = '';
+        const h1 = document.createElement('h1');
+        h1.textContent = '\u200B';
+        editor.appendChild(h1);
+        renderDocsList();
+        updateDateStamp();
+        updatePageTitle();
+        if (!silent) closeMenu();
+        setCaretToEnd(h1);
+      }
+
+      function loadCurrentDoc() {
+        const doc = docs.find(d => d.id === currentDocId);
+        if (doc) {
+          editor.innerHTML = sanitizeHTML(doc.content);
+          updateDateStamp();
+          updatePageTitle();
+        }
+      }
+
+      function saveCurrentDoc() {
+        const doc = docs.find(d => d.id === currentDocId);
+        if (doc) {
+          doc.content = editor.innerHTML;
+          doc.modified = Date.now();
+          doc.title = getDocTitle(doc.content);
+          saveDocs();
+          showSaveIndicator();
+          renderDocsList();
+          updatePageTitle();
+        }
+      }
+
+      function getDocTitle(html) {
+        const temp = document.createElement('div');
+        temp.innerHTML = html;
+        const text = temp.textContent.trim();
+        if (!text) return 'Untitled';
+        const firstLine = text.split('\n')[0].trim();
+        return firstLine.slice(0, 40) || 'Untitled';
+      }
+
+      function switchToDoc(id) {
+        if (id === currentDocId) return;
+        currentDocId = id;
+        saveDocs();
+        loadCurrentDoc();
+        renderDocsList();
+        closeMenu();
+        editor.focus();
+      }
+
+      function deleteDoc(id, e) {
+        e.stopPropagation();
+        if (docs.length <= 1) return;
+        
+        docs = docs.filter(d => d.id !== id);
+        if (currentDocId === id) {
+          currentDocId = docs[0].id;
+          loadCurrentDoc();
+        }
+        saveDocs();
+        renderDocsList();
+      }
+
+      function renderDocsList() {
+        docsList.innerHTML = '';
+        docs.forEach(doc => {
+          const item = document.createElement('div');
+          item.className = 'doc-item' + (doc.id === currentDocId ? ' active' : '');
+          item.innerHTML = `
+            <span class="doc-title">${escapeHtml(doc.title)}</span>
+            <span class="doc-date">${formatDate(doc.created)}</span>
+            ${docs.length > 1 ? '<span class="doc-delete">×</span>' : ''}
+          `;
+          item.addEventListener('click', () => switchToDoc(doc.id));
+          const del = item.querySelector('.doc-delete');
+          if (del) del.addEventListener('click', (e) => deleteDoc(doc.id, e));
+          docsList.appendChild(item);
+        });
+      }
+
+      function formatDate(ts) {
+        const d = new Date(ts);
+        const now = new Date();
+        if (d.toDateString() === now.toDateString()) {
+          return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+        return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+      }
+
+      function formatCreationDate(ts) {
+        const d = new Date(ts);
+        return d.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) +
+               ' · ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      }
+
+      function updatePageTitle() {
+        let docTitle = '';
+        // Try first element child
+        const firstEl = editor.firstElementChild;
+        if (firstEl) {
+          const text = firstEl.textContent.trim().replace(/\u200B/g, '');
+          if (text) docTitle = text.slice(0, 50);
+        }
+        // Fallback: use doc title from storage
+        if (!docTitle) {
+          const doc = docs.find(d => d.id === currentDocId);
+          if (doc && doc.title && doc.title !== 'Untitled') {
+            docTitle = doc.title;
+          }
+        }
+        document.title = docTitle ? 'Write - ' + docTitle : 'Write';
+      }
+
+      function updateDateStamp() {
+        const doc = docs.find(d => d.id === currentDocId);
+        if (doc) {
+          dateStamp.textContent = formatCreationDate(doc.created);
+        }
+      }
+
+      function escapeHtml(s) {
+        return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      }
+
+      // === THEME ===
+      function getSystemTheme() {
+        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
+
+      function setTheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        themeIcon.textContent = theme === 'dark' ? '☾' : '☀';
+        themeLabel.textContent = theme === 'dark' ? 'Dark' : 'Light';
+        try { localStorage.setItem(THEME_KEY, theme); } catch (e) {}
+      }
+
+      function initTheme() {
+        let theme;
+        try { theme = localStorage.getItem(THEME_KEY); } catch (e) {}
+        setTheme(theme || getSystemTheme());
+      }
+
+      function toggleTheme() {
+        setTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+      }
+
+      // === FONT ===
+      function setFont(font) {
+        document.body.setAttribute('data-font', font);
+        fontLabel.textContent = font === 'mono' ? 'Typewriter' : 'Serif';
+        try { localStorage.setItem(FONT_KEY, font); } catch (e) {}
+      }
+
+      function initFont() {
+        let font;
+        try { font = localStorage.getItem(FONT_KEY); } catch (e) {}
+        setFont(font || 'serif');
+      }
+
+      function toggleFont() {
+        setFont(document.body.getAttribute('data-font') === 'serif' ? 'mono' : 'serif');
+      }
+
+      // === MENU ===
+      function toggleMenu() { menu.classList.toggle('visible'); }
+      function closeMenu() { menu.classList.remove('visible'); }
+
+      // === SAVE INDICATOR ===
+      function showSaveIndicator() {
+        saveDot.classList.remove('visible');
+        void saveDot.offsetWidth;
+        saveDot.classList.add('visible');
+        setTimeout(() => saveDot.classList.remove('visible'), 2500);
+      }
+
+      function debouncedSave() {
+        if (saveTimeout) clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(saveCurrentDoc, SAVE_DELAY);
+      }
+
+      // === SECURITY ===
+      function sanitizeHTML(html) {
+        const allowed = ['p', 'br', 'h1', 'h2', 'h3', 'ul', 'ol', 'li', 'strong', 'b', 'em', 'i', 'code', 'pre', 'blockquote', 'hr', 'a', 'div', 'span'];
+        const template = document.createElement('template');
+        template.innerHTML = html;
+
+        function clean(node) {
+          if (node.nodeType === Node.TEXT_NODE) return;
+          if (node.nodeType !== Node.ELEMENT_NODE) { node.remove(); return; }
+
+          const tag = node.tagName.toLowerCase();
+          if (!allowed.includes(tag)) {
+            while (node.firstChild) node.parentNode.insertBefore(node.firstChild, node);
+            node.remove();
+            return;
+          }
+
+          Array.from(node.attributes).forEach(attr => {
+            if (tag === 'a' && attr.name === 'href' && /^https?:\/\//i.test(attr.value)) return;
+            node.removeAttribute(attr.name);
+          });
+
+          Array.from(node.childNodes).forEach(clean);
+        }
+
+        Array.from(template.content.childNodes).forEach(clean);
+        const div = document.createElement('div');
+        div.appendChild(template.content);
+        return div.innerHTML;
+      }
+
+      // === CARET ===
+      function setCaretToEnd(el) {
+        const range = document.createRange();
+        const sel = window.getSelection();
+        range.selectNodeContents(el);
+        range.collapse(false);
+        sel.removeAllRanges();
+        sel.addRange(range);
+        el.focus();
+      }
+
+      function setCaretToStart(el) {
+        const range = document.createRange();
+        const sel = window.getSelection();
+        range.selectNodeContents(el);
+        range.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(range);
+        el.focus();
+      }
+
+      function getCurrentBlock() {
+        const sel = window.getSelection();
+        if (!sel.rangeCount) return null;
+        let node = sel.anchorNode;
+        if (node.nodeType === Node.TEXT_NODE) node = node.parentNode;
+        while (node && node !== editor) {
+          if (node.parentNode === editor) return node;
+          node = node.parentNode;
+        }
+        return null;
+      }
+
+      function getTextBeforeCursor() {
+        const sel = window.getSelection();
+        if (!sel.rangeCount) return '';
+        const range = sel.getRangeAt(0);
+        const preRange = range.cloneRange();
+        const block = getCurrentBlock();
+        preRange.selectNodeContents(block || editor);
+        preRange.setEnd(range.startContainer, range.startOffset);
+        return preRange.toString();
+      }
+
+      // === MARKDOWN ===
+      function handleInput(e) {
+        if (e.inputType !== 'insertText') return;
+        if (e.data !== ' ') return;
+
+        const text = getTextBeforeCursor();
+        
+        if (/^#\s$/.test(text)) { doTransform(/^#\s$/, 'h1'); return; }
+        if (/^##\s$/.test(text)) { doTransform(/^##\s$/, 'h2'); return; }
+        if (/^###\s$/.test(text)) { doTransform(/^###\s$/, 'h3'); return; }
+        if (/^[-*]\s$/.test(text)) { doTransform(/^[-*]\s$/, 'ul'); return; }
+        if (/^\d+\.\s$/.test(text)) { doTransform(/^\d+\.\s$/, 'ol'); return; }
+        if (/^>\s$/.test(text)) { doTransform(/^>\s$/, 'blockquote'); return; }
+        if (/^[-*_]{3,}\s$/.test(text)) { doTransform(/^[-*_]{3,}\s$/, 'hr'); return; }
+        
+        checkInlineFormatting();
+      }
+
+      function doTransform(pattern, type) {
+        const sel = window.getSelection();
+        if (!sel.rangeCount) return;
+        
+        const range = sel.getRangeAt(0);
+        const block = getCurrentBlock();
+        
+        let fullText = block ? block.textContent : 
+          (range.startContainer.nodeType === Node.TEXT_NODE ? range.startContainer.textContent : '');
+        
+        const match = fullText.match(pattern);
+        const afterText = match ? fullText.slice(match[0].length).trim() : '';
+        
+        let newElement;
+        
+        if (type === 'ul' || type === 'ol') {
+          const list = document.createElement(type);
+          const li = document.createElement('li');
+          li.textContent = afterText || '\u200B';
+          list.appendChild(li);
+          newElement = list;
+        } else if (type === 'hr') {
+          const hr = document.createElement('hr');
+          const p = document.createElement('p');
+          p.innerHTML = '<br>';
+          
+          if (block && block.parentNode === editor) {
+            block.replaceWith(hr);
+            hr.after(p);
+          } else {
+            if (range.startContainer.nodeType === Node.TEXT_NODE) range.startContainer.textContent = '';
+            editor.appendChild(hr);
+            editor.appendChild(p);
+          }
+          setCaretToStart(p);
+          return;
+        } else {
+          newElement = document.createElement(type);
+          newElement.textContent = afterText || '\u200B';
+        }
+        
+        if (block && block.parentNode === editor) {
+          block.replaceWith(newElement);
+        } else {
+          if (range.startContainer.nodeType === Node.TEXT_NODE) range.startContainer.textContent = '';
+          editor.appendChild(newElement);
+        }
+        
+        setCaretToEnd(type === 'ul' || type === 'ol' ? newElement.querySelector('li') : newElement);
+      }
+
+      function checkInlineFormatting() {
+        const sel = window.getSelection();
+        if (!sel.rangeCount) return;
+        const node = sel.getRangeAt(0).startContainer;
+        if (node.nodeType !== Node.TEXT_NODE) return;
+        
+        const text = node.textContent;
+        
+        let match = text.match(/\*\*([^*]+)\*\*/);
+        if (match) { replaceInline(node, match, 'strong'); return; }
+        
+        match = text.match(/(?<!\*)\*([^*]+)\*(?!\*)/);
+        if (match) { replaceInline(node, match, 'em'); return; }
+        
+        match = text.match(/`([^`]+)`/);
+        if (match) { replaceInline(node, match, 'code'); return; }
+      }
+
+      function replaceInline(textNode, match, tagName) {
+        const before = textNode.textContent.slice(0, match.index);
+        const after = textNode.textContent.slice(match.index + match[0].length);
+        
+        const el = document.createElement(tagName);
+        el.textContent = match[1];
+        
+        textNode.textContent = before;
+        const afterNode = document.createTextNode(after || '\u200B');
+        
+        textNode.parentNode.insertBefore(el, textNode.nextSibling);
+        textNode.parentNode.insertBefore(afterNode, el.nextSibling);
+        
+        const range = document.createRange();
+        range.setStart(afterNode, 0);
+        range.collapse(true);
+        window.getSelection().removeAllRanges();
+        window.getSelection().addRange(range);
+      }
+
+      // === KEYBOARD ===
+      function handleKeydown(e) {
+        // Try fullscreen on first keypress
+        tryEnterFullscreen();
+
+        if (e.key === 'Escape') {
+          closeMenu();
+          helpOverlay.classList.remove('visible');
+          return;
+        }
+
+        const isMac = /Mac|iPhone|iPad|iPod/.test(navigator.platform);
+        const mod = isMac ? e.metaKey : e.ctrlKey;
+
+        if (mod && e.key === 's') { e.preventDefault(); downloadAsMarkdown(); return; }
+        if (mod && e.key === 'd') { e.preventDefault(); toggleTheme(); return; }
+        if (mod && e.key === 'b') { e.preventDefault(); document.execCommand('bold', false, null); return; }
+        if (mod && e.key === 'i') { e.preventDefault(); document.execCommand('italic', false, null); return; }
+
+        if (e.key === 'Tab') {
+          let li = getCurrentBlock();
+          while (li && li.tagName !== 'LI' && li !== editor) li = li.parentNode;
+          
+          if (li && li.tagName === 'LI') {
+            e.preventDefault();
+            handleListIndent(li, e.shiftKey);
+            return;
+          }
+          e.preventDefault();
+          document.execCommand('insertText', false, '  ');
+          return;
+        }
+
+        if (e.key === 'Enter' && !e.shiftKey) {
+          let li = getCurrentBlock();
+          while (li && li.tagName !== 'LI' && li !== editor) li = li.parentNode;
+          
+          if (li && li.tagName === 'LI' && (li.textContent.trim() === '' || li.textContent === '\u200B')) {
+            e.preventDefault();
+            exitList(li);
+          }
+        }
+      }
+
+      function handleListIndent(li, outdent) {
+        const list = li.parentElement;
+        if (outdent) {
+          if (list.parentElement && list.parentElement.tagName === 'LI') {
+            list.parentElement.parentElement.insertBefore(li, list.parentElement.nextSibling);
+            if (list.children.length === 0) list.remove();
+            setCaretToEnd(li);
+          }
+        } else {
+          const prev = li.previousElementSibling;
+          if (prev) {
+            let nested = prev.querySelector('ul, ol');
+            if (!nested) { nested = document.createElement(list.tagName); prev.appendChild(nested); }
+            nested.appendChild(li);
+            setCaretToEnd(li);
+          }
+        }
+      }
+
+      function exitList(li) {
+        const list = li.parentElement;
+        const p = document.createElement('p');
+        p.innerHTML = '<br>';
+        list.after(p);
+        li.remove();
+        if (list.children.length === 0) list.remove();
+        setCaretToStart(p);
+      }
+
+      // === FILE OPS ===
+      function htmlToMarkdown(html) {
+        const temp = document.createElement('div');
+        temp.innerHTML = html;
+
+        function convert(node, indent = '') {
+          let result = '';
+          node.childNodes.forEach(child => {
+            if (child.nodeType === Node.TEXT_NODE) {
+              result += child.textContent.replace(/\u200B/g, '');
+            } else if (child.nodeType === Node.ELEMENT_NODE) {
+              const tag = child.tagName.toLowerCase();
+              switch (tag) {
+                case 'h1': result += '\n# ' + convert(child) + '\n'; break;
+                case 'h2': result += '\n## ' + convert(child) + '\n'; break;
+                case 'h3': result += '\n### ' + convert(child) + '\n'; break;
+                case 'p': case 'div': result += '\n' + convert(child) + '\n'; break;
+                case 'br': result += '\n'; break;
+                case 'strong': case 'b': result += '**' + convert(child) + '**'; break;
+                case 'em': case 'i': result += '*' + convert(child) + '*'; break;
+                case 'code': result += '`' + convert(child) + '`'; break;
+                case 'pre': result += '\n```\n' + child.textContent + '\n```\n'; break;
+                case 'blockquote': result += '\n> ' + convert(child).trim().replace(/\n/g, '\n> ') + '\n'; break;
+                case 'hr': result += '\n---\n'; break;
+                case 'ul':
+                  child.querySelectorAll(':scope > li').forEach(li => {
+                    result += indent + '- ' + convert(li, indent + '  ').trim() + '\n';
+                  });
+                  break;
+                case 'ol':
+                  let num = 1;
+                  child.querySelectorAll(':scope > li').forEach(li => {
+                    result += indent + num++ + '. ' + convert(li, indent + '   ').trim() + '\n';
+                  });
+                  break;
+                default: result += convert(child, indent);
+              }
+            }
+          });
+          return result;
+        }
+        return convert(temp).trim().replace(/\n{3,}/g, '\n\n');
+      }
+
+      function downloadAsMarkdown() {
+        const md = htmlToMarkdown(editor.innerHTML);
+        const doc = docs.find(d => d.id === currentDocId);
+        const title = doc ? doc.title.replace(/[^a-z0-9]/gi, '-').toLowerCase() : 'note';
+        const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${title}.md`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showSaveIndicator();
+        closeMenu();
+      }
+
+      function markdownToHtml(md) {
+        return md
+          .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+          .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+          .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+          .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+          .replace(/^---$/gm, '<hr>')
+          .replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
+          .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+          .replace(/\*(.+?)\*/g, '<em>$1</em>')
+          .replace(/`([^`]+)`/g, '<code>$1</code>')
+          .replace(/^&gt; (.+)$/gm, '<blockquote>$1</blockquote>')
+          .replace(/^- (.+)$/gm, '<li>$1</li>')
+          .replace(/^\* (.+)$/gm, '<li>$1</li>')
+          .replace(/^\d+\. (.+)$/gm, '<li>$1</li>')
+          .replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>')
+          .replace(/^(?!<[huolb]|<hr)(.+)$/gm, '<p>$1</p>')
+          .replace(/\n/g, '');
+      }
+
+      function loadFile(file) {
+        if (!file.name.match(/\.(md|txt|markdown)$/i)) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          createNewDoc(true);
+          editor.innerHTML = sanitizeHTML(markdownToHtml(e.target.result));
+          saveCurrentDoc();
+          setCaretToEnd(editor);
+        };
+        reader.readAsText(file);
+      }
+
+      // === DRAG & DROP ===
+      let dragCount = 0;
+      document.addEventListener('dragenter', (e) => { e.preventDefault(); dragCount++; dropOverlay.classList.add('visible'); });
+      document.addEventListener('dragleave', (e) => { e.preventDefault(); if (--dragCount === 0) dropOverlay.classList.remove('visible'); });
+      document.addEventListener('dragover', (e) => e.preventDefault());
+      document.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dragCount = 0;
+        dropOverlay.classList.remove('visible');
+        if (e.dataTransfer.files.length) loadFile(e.dataTransfer.files[0]);
+      });
+
+      // === EVENT LISTENERS ===
+      menuTrigger.addEventListener('click', toggleMenu);
+      $('new-doc').addEventListener('click', () => createNewDoc());
+      $('toggle-theme').addEventListener('click', toggleTheme);
+      $('toggle-font').addEventListener('click', toggleFont);
+      $('download-md').addEventListener('click', downloadAsMarkdown);
+      $('show-help').addEventListener('click', () => { helpOverlay.classList.add('visible'); closeMenu(); });
+      helpOverlay.addEventListener('click', (e) => { if (e.target === helpOverlay) helpOverlay.classList.remove('visible'); });
+      
+      document.addEventListener('click', (e) => {
+        if (!menu.contains(e.target) && e.target !== menuTrigger) closeMenu();
+      });
+
+      // === INIT ===
+      function init() {
+        initTheme();
+        initFont();
+        loadDocs();
+
+        editor.addEventListener('input', (e) => { debouncedSave(); handleInput(e); });
+        editor.addEventListener('keydown', handleKeydown);
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeMenu(); helpOverlay.classList.remove('visible'); }});
+        
+        editor.focus();
+        window.addEventListener('beforeunload', () => { if (saveTimeout) saveCurrentDoc(); });
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+      } else {
+        init();
+      }
+
+      // Register service worker for PWA/offline support
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js').catch(() => {});
+      }
+    })();
+  </script>
+</body>
+</html>
