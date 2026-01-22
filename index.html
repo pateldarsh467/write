@@ -69,10 +69,69 @@
     [data-font="mono"] #editor { font-size: 0.9rem; line-height: 1.7; }
 
     #editor:empty::before {
-      content: "Begin writing...";
-      color: var(--text-muted);
-      font-style: italic;
+      content: "";
+    }
+
+    /* Ghost text overlay for empty editor */
+    #ghost-text {
+      position: absolute;
+      top: 12vh;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 680px;
+      padding: 0 24px;
       pointer-events: none;
+      user-select: none;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    #ghost-text.visible {
+      opacity: 1;
+    }
+
+    #ghost-text h1 {
+      font-family: var(--font-body);
+      font-size: 2.2rem;
+      font-weight: 400;
+      color: var(--text-muted);
+      opacity: 0.5;
+      margin: 0 0 1.5rem 0;
+      line-height: 1.3;
+      letter-spacing: -0.02em;
+    }
+
+    [data-font="mono"] #ghost-text h1 {
+      font-size: 1.8rem;
+      font-weight: 700;
+    }
+
+    #ghost-text p {
+      font-family: var(--font-body);
+      font-size: 1rem;
+      color: var(--text-muted);
+      opacity: 0.4;
+      margin: 0 0 0.8rem 0;
+      line-height: 1.8;
+    }
+
+    #ghost-text .hint {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      font-size: 12px;
+      color: var(--text-muted);
+      opacity: 0.35;
+      margin-top: 2rem;
+    }
+
+    #ghost-text kbd {
+      font-family: "SF Mono", Monaco, monospace;
+      font-size: 10px;
+      background: var(--accent);
+      border: 1px solid var(--border);
+      padding: 2px 5px;
+      border-radius: 4px;
+      opacity: 0.7;
     }
 
     #editor div, #editor p { margin-bottom: 0.5em; min-height: 1.8em; }
@@ -360,7 +419,7 @@
 
     @media print {
       #editor { padding: 0; max-width: none; height: auto; overflow: visible; }
-      #save-dot, #menu-trigger, #menu, #drop-overlay, #help-overlay, #date-stamp { display: none !important; }
+      #save-dot, #menu-trigger, #menu, #drop-overlay, #help-overlay, #date-stamp, #ghost-text { display: none !important; }
     }
 
     @media (max-width: 600px) {
@@ -370,11 +429,20 @@
       #menu { bottom: 60px; left: 16px; }
       #save-dot { bottom: 16px; right: 16px; }
       #date-stamp { top: 12px; right: 16px; font-size: 10px; }
+      #ghost-text { top: 6vh; padding: 0 20px; }
+      #ghost-text h1 { font-size: 1.6rem; }
     }
   </style>
 </head>
 <body data-font="serif">
   <div id="editor" contenteditable="true" spellcheck="true" data-gramm="false"></div>
+
+  <div id="ghost-text">
+    <h1>Start with a title...</h1>
+    <p>Write is a distraction-free space for your thoughts. Everything stays on your device—no accounts, no cloud, no tracking.</p>
+    <p>Use <strong># heading</strong>, <strong>**bold**</strong>, <strong>*italic*</strong>, or <strong>- lists</strong> as you type.</p>
+    <div class="hint">Click the <kbd>⋮</kbd> menu for more options · Press <kbd>?</kbd> for help</div>
+  </div>
 
   <div id="date-stamp"></div>
   <div id="save-dot"></div>
@@ -418,10 +486,10 @@
       <p class="subtitle">Your words stay on your device. Nothing leaves this tab. No accounts, no cloud, no tracking.</p>
 
       <div style="display:flex;gap:10px;margin:16px 0;">
-        <a class="btn" href="https://github.com/yourusername/write" target="_blank" rel="noopener" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);text-decoration:none;font-size:12px;font-weight:500;transition:background 0.15s ease;">
+        <a class="btn" href="https://github.com/pateldarsh467/write" target="_blank" rel="noopener" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);text-decoration:none;font-size:12px;font-weight:500;transition:background 0.15s ease;">
           <span style="font-size:14px;">↓</span> Run locally
         </a>
-        <a class="btn" href="https://github.com/yourusername/write" target="_blank" rel="noopener" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);text-decoration:none;font-size:12px;font-weight:500;transition:background 0.15s ease;">
+        <a class="btn" href="https://github.com/pateldarsh467/write" target="_blank" rel="noopener" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 14px;background:var(--accent);border:1px solid var(--border);border-radius:8px;color:var(--text);text-decoration:none;font-size:12px;font-weight:500;transition:background 0.15s ease;">
           <span style="font-size:14px;">★</span> Star on GitHub
         </a>
       </div>
@@ -494,6 +562,7 @@
       const themeLabel = $('theme-label');
       const fontLabel = $('font-label');
       const dateStamp = $('date-stamp');
+      const ghostText = $('ghost-text');
 
       let saveTimeout = null;
       let docs = [];
@@ -566,6 +635,7 @@
         renderDocsList();
         updateDateStamp();
         updatePageTitle();
+        updateGhostText();
         if (!silent) closeMenu();
         setCaretToEnd(h1);
       }
@@ -576,6 +646,7 @@
           editor.innerHTML = sanitizeHTML(doc.content);
           updateDateStamp();
           updatePageTitle();
+          updateGhostText();
         }
       }
 
@@ -727,6 +798,16 @@
       // === MENU ===
       function toggleMenu() { menu.classList.toggle('visible'); }
       function closeMenu() { menu.classList.remove('visible'); }
+
+      // === GHOST TEXT ===
+      function updateGhostText() {
+        const text = editor.textContent.replace(/\u200B/g, '').trim();
+        if (text === '' || text === '') {
+          ghostText.classList.add('visible');
+        } else {
+          ghostText.classList.remove('visible');
+        }
+      }
 
       // === SAVE INDICATOR ===
       function showSaveIndicator() {
@@ -1120,7 +1201,7 @@
         initFont();
         loadDocs();
 
-        editor.addEventListener('input', (e) => { debouncedSave(); handleInput(e); });
+        editor.addEventListener('input', (e) => { debouncedSave(); handleInput(e); updateGhostText(); });
         editor.addEventListener('keydown', handleKeydown);
         document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeMenu(); helpOverlay.classList.remove('visible'); }});
         

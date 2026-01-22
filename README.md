@@ -2,7 +2,7 @@
 
 A minimal, distraction-free notepad for focused writing. No accounts, no cloud, no tracking — your words stay on your device.
 
-**[Launch Write →](https://write.yoursite.com)**
+**[Launch Write →](https://write.pateldarsh.com)**
 
 ---
 
